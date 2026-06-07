@@ -67,9 +67,12 @@ const agentPrompt =
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
     const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
 
-    if (!endpoint || !apiKey) {
-      console.error("CRITICAL ERROR: Render is not sending variables to the code!");
-    }
+    // if (!endpoint || !apiKey) {
+    //   console.error("CRITICAL ERROR: Render is not sending variables to the code!");
+    // }
+
+    // FORCE RENDER TO USE YOUR EXACT SPELLING:
+    process.env.AZURE_OPENAI_DEPLOYMENT_NAME = "gpt-4o";
 
     this.client = new OpenAIClient(
       endpoint,
