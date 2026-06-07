@@ -67,16 +67,11 @@ const agentPrompt =
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
     const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
 
-    // if (!endpoint || !apiKey) {
-    //   console.error("CRITICAL ERROR: Render is not sending variables to the code!");
-    // }
-
-    // FORCE RENDER TO USE YOUR EXACT SPELLING:
-    process.env.AZURE_OPENAI_DEPLOYMENT_NAME = "gpt-4o";
-
+    // EXPLICITLY SET THE COMPATIBLE API VERSION PARAMETER:
     this.client = new OpenAIClient(
       endpoint,
       new AzureKeyCredential(apiKey),
+      { apiVersion: "2024-06-01" }
     );
   }
 
