@@ -50,15 +50,33 @@ const agentPrompt =
   "- Never discuss pricing or timelines.\n" +
   "- Never claim to be human if directly asked.";
 
-export class FunctionCallingLlmClient {
+// export class FunctionCallingLlmClient {
+//   private client: OpenAIClient;
+
+//   constructor() {
+//     this.client = new OpenAIClient(
+//       process.env.AZURE_OPENAI_ENDPOINT,
+//       new AzureKeyCredential(process.env.AZURE_OPENAI_KEY),
+//     );
+//   }
+
+  export class FunctionCallingLlmClient {
   private client: OpenAIClient;
 
   constructor() {
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
+    const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
+
+    if (!endpoint || !apiKey) {
+      console.error("CRITICAL ERROR: Render is not sending variables to the code!");
+    }
+
     this.client = new OpenAIClient(
-      process.env.AZURE_OPENAI_ENDPOINT,
-      new AzureKeyCredential(process.env.AZURE_OPENAI_KEY),
+      endpoint,
+      new AzureKeyCredential(apiKey),
     );
   }
+
 
   // First sentence requested
   BeginMessage(ws: WebSocket) {
