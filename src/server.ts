@@ -87,7 +87,7 @@ export class Server {
           ws.send(JSON.stringify(config));
 
           // Start sending the begin message to signal the client is ready.
-          const llmClient = new FunctionCallingLlmClient();
+          const llmClient = new DemoLlmClient();
 
           ws.on("error", (err) => {
             console.error("Error received in LLM websocket client: ", err);
