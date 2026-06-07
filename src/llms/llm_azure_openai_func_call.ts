@@ -224,7 +224,7 @@ const agentPrompt =
     try {
       // OVERRIDE DEPLOYMENT MISMATCH BY HARDCODING YOUR DEPLOYMENT NAME DIRECTLY HERE:
       let events = await this.client.streamChatCompletions(
-        "gpt-4o",
+        "gpt-4o-pk",
         requestMessages,
         option,
       );
