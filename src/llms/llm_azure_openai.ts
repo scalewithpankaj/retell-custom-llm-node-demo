@@ -14,7 +14,7 @@ import {
 } from "../types";
 
 const beginSentence =
-  ""Hi, this is Hazel calling from Pickd.ca. I am not calling as a patient. Could I please speak with your office manager or practice manager?";
+  "Hi, this is Hazel calling from Pickd.ca. I am not calling as a patient. Could I please speak with your office manager or practice manager?";
 const agentPrompt =
   "You are a friendly outbound sales representative calling on behalf of Pickd.ca.\n" +
   "You are calling independent dental clinics in Mississauga, Ontario.\n" +
