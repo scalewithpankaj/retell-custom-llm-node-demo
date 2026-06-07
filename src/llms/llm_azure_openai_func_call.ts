@@ -155,7 +155,7 @@ const agentPrompt =
     return requestMessages;
   }
 
-  // Step 2: Prepare the function calling definition to the prompt
+    // Step 2: Prepare the function calling definition to the prompt
   private PrepareFunctions(): ChatCompletionsFunctionToolDefinition[] {
     let functions: ChatCompletionsFunctionToolDefinition[] = [
       // Function to decide when to end call
@@ -178,27 +178,25 @@ const agentPrompt =
         },
       },
 
-      // function to book appointment
+      // Function to log the call outcome status (Required by your script)
       {
         type: "function",
         function: {
-          name: "book_appointment",
-          description: "Book an appointment to meet our doctor in office.",
+          name: "log_outcome",
+          description: "Log the final outcome call status before hanging up.",
           parameters: {
             type: "object",
             properties: {
+              outcome: {
+                type: "string",
+                description: "The direct outcome status (e.g., voicemail, interested, not_interested, busy).",
+              },
               message: {
                 type: "string",
-                description:
-                  "The message you will say while setting up the appointment like 'one moment'",
-              },
-              date: {
-                type: "string",
-                description:
-                  "The date of appointment to make in forms of year-month-day.",
+                description: "The polite sign-off message you will say to the user before ending the call.",
               },
             },
-            required: ["message"],
+            required: ["outcome", "message"],
           },
         },
       },
@@ -229,8 +227,9 @@ const agentPrompt =
     let funcArguments = "";
 
     try {
+      // OVERRIDE DEPLOYMENT MISMATCH BY HARDCODING YOUR DEPLOYMENT NAME DIRECTLY HERE:
       let events = await this.client.streamChatCompletions(
-        process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+        "gpt-4o",
         requestMessages,
         option,
       );
@@ -241,13 +240,11 @@ const agentPrompt =
           if (!delta) continue;
 
           // Step 4: Extract the functions
-          if (delta.toolCalls.length >= 1) {
+          if (delta.toolCalls && delta.toolCalls.length >= 1) {
             const toolCall = delta.toolCalls[0];
             // Function calling here.
             if (toolCall.id) {
               if (funcCall) {
-                // Another function received, old function complete, can break here.
-                // You can also modify this to parse more functions to unlock parallel function calling.
                 break;
               } else {
                 funcCall = {
@@ -278,7 +275,7 @@ const agentPrompt =
       if (funcCall != null) {
         // Step 5: Call the functions
 
-        // If it's to end the call, simply send a last message and end the call
+        // If it's to end the call
         if (funcCall.funcName === "end_call") {
           funcCall.arguments = JSON.parse(funcArguments);
           const res: CustomLlmResponse = {
@@ -291,42 +288,19 @@ const agentPrompt =
           ws.send(JSON.stringify(res));
         }
 
-        // If it's to book appointment, say something and book appointment at the same time, and then say something after booking is done
-        if (funcCall.funcName === "book_appointment") {
+        // Handle the custom log_outcome tool required by your dental script
+        if (funcCall.funcName === "log_outcome") {
           funcCall.arguments = JSON.parse(funcArguments);
+          console.log(`[DATABASE LOGED] Call complete. Status determined: ${funcCall.arguments.outcome}`);
+          
           const res: CustomLlmResponse = {
             response_type: "response",
             response_id: request.response_id,
-            // LLM will return the function name along with the message property we define. In this case, "The message you will say while setting up the appointment like 'one moment'"
             content: funcCall.arguments.message,
-            // If content_complete is false, it means AI will speak later. In our case, agent will say something to confirm the appointment, so we set it to false
-            content_complete: false,
-            end_call: false,
+            content_complete: true,
+            end_call: true, // End the call natively after logging outcome
           };
           ws.send(JSON.stringify(res));
-          // To make the tool invocation show up in transcript
-          const functionInvocationResponse: CustomLlmResponse = {
-            response_type: "tool_call_invocation",
-            tool_call_id: funcCall.id,
-            name: funcCall.funcName,
-            arguments: JSON.stringify(funcCall.arguments)
-          };
-          ws.send(JSON.stringify(functionInvocationResponse));
-
-          // Sleep 2s to mimic the actual appointment booking
-          // Replace with your actual making appointment functions
-          await new Promise((r) => setTimeout(r, 2000));
-          funcCall.result = "Appointment booked successfully";
-
-          // To make the tool result show up in transcript
-          const functionResult: CustomLlmResponse = {
-            response_type: "tool_call_result",
-            tool_call_id: funcCall.id,
-            content: "Appointment booked successfully",
-          };
-          ws.send(JSON.stringify(functionResult));
-
-          this.DraftResponse(request, ws, funcCall);
         }
       } else {
         const res: CustomLlmResponse = {
