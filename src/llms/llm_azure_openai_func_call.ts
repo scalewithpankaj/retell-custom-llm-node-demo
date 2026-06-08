@@ -71,7 +71,7 @@ const agentPrompt =
     this.client = new OpenAIClient(
       endpoint,
       new AzureKeyCredential(apiKey),
-      { apiVersion: "2024-06-01" }
+      { apiVersion: "2024-10-01-preview" }
     );
   }
 
