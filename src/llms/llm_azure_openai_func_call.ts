@@ -64,14 +64,17 @@ const agentPrompt =
   private client: OpenAIClient;
 
   constructor() {
-    const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
+    // 1. CHOOSE THE PROJECT ENDPOINT AND APPEND /openai TO MANUALLY MATCH FOUNDRY ROUTING:
+    const baseEndpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
+    const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
+    
     const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
 
-    // EXPLICITLY SET THE COMPATIBLE API VERSION PARAMETER:
+    // 2. CHANGE THE OUTDATED API VERSION TO A VALID DATE STRING (e.g., 2024-12-01-preview):
     this.client = new OpenAIClient(
       endpoint,
       new AzureKeyCredential(apiKey),
-      { apiVersion: "2026-03-01" }
+      { apiVersion: "2024-12-01-preview" } 
     );
   }
 
