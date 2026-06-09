@@ -5,6 +5,7 @@ import {
   GetChatCompletionsOptions,
   ChatCompletionsFunctionToolDefinition,
 } from "@azure/openai";
+mport { AzureOpenAI } from "openai";
 import { WebSocket } from "ws";
 import {
   CustomLlmRequest,
@@ -64,18 +65,23 @@ const agentPrompt =
   private client: OpenAIClient;
 
   constructor() {
-    // 1. CHOOSE THE PROJECT ENDPOINT AND APPEND /openai TO MANUALLY MATCH FOUNDRY ROUTING:
-    const baseEndpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
-    const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
+    // // 1. CHOOSE THE PROJECT ENDPOINT AND APPEND /openai TO MANUALLY MATCH FOUNDRY ROUTING:
+    // const baseEndpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
+    // const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
     
-    const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
+    // const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
 
-    // 2. CHANGE THE OUTDATED API VERSION TO A VALID DATE STRING (e.g., 2024-12-01-preview):
-    this.client = new OpenAIClient(
-      endpoint,
-      new AzureKeyCredential(apiKey),
-      { apiVersion: "2024-12-01-preview" } 
-    );
+    // // 2. CHANGE THE OUTDATED API VERSION TO A VALID DATE STRING (e.g., 2024-12-01-preview):
+    // this.client = new OpenAIClient(
+    //   endpoint,
+    //   new AzureKeyCredential(apiKey),
+    //   { apiVersion: "2024-12-01-preview" } 
+    // );
+    const client = new AzureOpenAI({
+    endpoint: process.env.AZURE_OPENAI_ENDPOINT, // Safe to pass standard project URL
+    apiKey: process.env.AZURE_OPENAI_KEY,
+    apiVersion: "2024-12-01-preview"
+});
   }
 
 
