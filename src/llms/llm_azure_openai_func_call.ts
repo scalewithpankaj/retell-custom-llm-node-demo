@@ -245,12 +245,14 @@ const agentPrompt =
     let funcArguments = "";
 
     try {
-      // OVERRIDE DEPLOYMENT MISMATCH BY HARDCODING YOUR DEPLOYMENT NAME DIRECTLY HERE:
-      let events = await this.client.streamChatCompletions(
-        "gpt-4o-pk",
-        requestMessages,
-        option,
-      );
+  //  MODERN SYNTAX FOR THE OPENAI SDK ENGINE:
+  const events = await this.client.chat.completions.create({
+    model: "gpt-4o-pk",
+    messages: requestMessages,
+    stream: true,
+    ...option // Spreads out your function/tool definitions safely
+  });
+
 
       for await (const event of events) {
         if (event.choices.length >= 1) {
