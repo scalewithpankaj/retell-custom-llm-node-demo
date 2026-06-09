@@ -64,21 +64,7 @@ const agentPrompt =
   export class FunctionCallingLlmClient {
     private client: OpenAI;
 
-  constructor() {
-    const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
-    const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
-    const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2024-12-01-preview";
-
-    // Initialize using the base client options
-    this.client = new OpenAI({
-      apiKey: apiKey,
-      baseURL: `${endpoint}/openai/deployments`, // Appends deployment routing paths manually
-      defaultQuery: { "api-version": apiVersion },
-      defaultHeaders: { "api-key": apiKey }
-    });
-  }
-}
-//   private client: OpenAIClient;
+  // private client: OpenAIClient;
 
 //   constructor() {
 //     // // 1. CHOOSE THE PROJECT ENDPOINT AND APPEND /openai TO MANUALLY MATCH FOUNDRY ROUTING:
@@ -98,7 +84,19 @@ const agentPrompt =
 //     apiKey: process.env.AZURE_OPENAI_KEY,
 //     apiVersion: "2024-12-01-preview"
 // });
-//   }
+    constructor() {
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
+    const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
+    const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2024-12-01-preview";
+
+    // Initialize using the base client options
+    this.client = new OpenAI({
+      apiKey: apiKey,
+      baseURL: `${endpoint}/openai/deployments`, // Appends deployment routing paths manually
+      defaultQuery: { "api-version": apiVersion },
+      defaultHeaders: { "api-key": apiKey }
+    });
+  }
 
 
   // First sentence requested
