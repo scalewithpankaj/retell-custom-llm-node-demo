@@ -5,7 +5,6 @@ import {
   GetChatCompletionsOptions,
   ChatCompletionsFunctionToolDefinition,
 } from "@azure/openai";
-import OpenAI from "openai";
 import { WebSocket } from "ws";
 import {
   CustomLlmRequest,
@@ -62,40 +61,21 @@ const agentPrompt =
 //   }
 
   export class FunctionCallingLlmClient {
-    private client: OpenAI;
+  private client: OpenAIClient;
 
-  // private client: OpenAIClient;
-
-//   constructor() {
-//     // // 1. CHOOSE THE PROJECT ENDPOINT AND APPEND /openai TO MANUALLY MATCH FOUNDRY ROUTING:
-//     // const baseEndpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
-//     // const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
+  constructor() {
+    const baseEndpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
+    // Mandate the trailing /openai string so Azure AI Foundry maps correctly
+    const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
     
-//     // const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
-
-//     // // 2. CHANGE THE OUTDATED API VERSION TO A VALID DATE STRING (e.g., 2024-12-01-preview):
-//     // this.client = new OpenAIClient(
-//     //   endpoint,
-//     //   new AzureKeyCredential(apiKey),
-//     //   { apiVersion: "2024-12-01-preview" } 
-//     // );
-//     const client = new AzureOpenAI({
-//     endpoint: process.env.AZURE_OPENAI_ENDPOINT, // Safe to pass standard project URL
-//     apiKey: process.env.AZURE_OPENAI_KEY,
-//     apiVersion: "2024-12-01-preview"
-// });
-    constructor() {
-    const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
     const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
     const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2024-12-01-preview";
 
-    // Initialize using the base client options
-    this.client = new OpenAI({
-      apiKey: apiKey,
-      baseURL: `${endpoint}/openai/deployments`, // Appends deployment routing paths manually
-      defaultQuery: { "api-version": apiVersion },
-      defaultHeaders: { "api-key": apiKey }
-    });
+    this.client = new OpenAIClient(
+      endpoint,
+      new AzureKeyCredential(apiKey),
+      { apiVersion: apiVersion }
+    );
   }
 
 
@@ -245,13 +225,13 @@ const agentPrompt =
     let funcArguments = "";
 
     try {
-  //  MODERN SYNTAX FOR THE OPENAI SDK ENGINE:
-  const events = await this.client.chat.completions.create({
-    model: "gpt-4o-pk",
-    messages: requestMessages,
-    stream: true,
-    ...option // Spreads out your function/tool definitions safely
-  });
+  // Revert this method back to use the original streamChatCompletions function
+  let events = await this.client.streamChatCompletions(
+    "gpt-4o-pk",
+    requestMessages,
+    option,
+  );
+
 
 
       for await (const event of events) {
