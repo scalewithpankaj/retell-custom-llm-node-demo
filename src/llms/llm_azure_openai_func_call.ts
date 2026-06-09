@@ -62,27 +62,43 @@ const agentPrompt =
 //   }
 
   export class FunctionCallingLlmClient {
-  private client: OpenAIClient;
+    private client: OpenAI;
 
   constructor() {
-    // // 1. CHOOSE THE PROJECT ENDPOINT AND APPEND /openai TO MANUALLY MATCH FOUNDRY ROUTING:
-    // const baseEndpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
-    // const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
-    
-    // const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
+    const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
+    const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2024-12-01-preview";
 
-    // // 2. CHANGE THE OUTDATED API VERSION TO A VALID DATE STRING (e.g., 2024-12-01-preview):
-    // this.client = new OpenAIClient(
-    //   endpoint,
-    //   new AzureKeyCredential(apiKey),
-    //   { apiVersion: "2024-12-01-preview" } 
-    // );
-    const client = new AzureOpenAI({
-    endpoint: process.env.AZURE_OPENAI_ENDPOINT, // Safe to pass standard project URL
-    apiKey: process.env.AZURE_OPENAI_KEY,
-    apiVersion: "2024-12-01-preview"
-});
+    // Initialize using the base client options
+    this.client = new OpenAI({
+      apiKey: apiKey,
+      baseURL: `${endpoint}/openai/deployments`, // Appends deployment routing paths manually
+      defaultQuery: { "api-version": apiVersion },
+      defaultHeaders: { "api-key": apiKey }
+    });
   }
+}
+//   private client: OpenAIClient;
+
+//   constructor() {
+//     // // 1. CHOOSE THE PROJECT ENDPOINT AND APPEND /openai TO MANUALLY MATCH FOUNDRY ROUTING:
+//     // const baseEndpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
+//     // const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
+    
+//     // const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
+
+//     // // 2. CHANGE THE OUTDATED API VERSION TO A VALID DATE STRING (e.g., 2024-12-01-preview):
+//     // this.client = new OpenAIClient(
+//     //   endpoint,
+//     //   new AzureKeyCredential(apiKey),
+//     //   { apiVersion: "2024-12-01-preview" } 
+//     // );
+//     const client = new AzureOpenAI({
+//     endpoint: process.env.AZURE_OPENAI_ENDPOINT, // Safe to pass standard project URL
+//     apiKey: process.env.AZURE_OPENAI_KEY,
+//     apiVersion: "2024-12-01-preview"
+// });
+//   }
 
 
   // First sentence requested
