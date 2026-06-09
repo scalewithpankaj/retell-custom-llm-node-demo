@@ -5,7 +5,7 @@ import {
   GetChatCompletionsOptions,
   ChatCompletionsFunctionToolDefinition,
 } from "@azure/openai";
-import { AzureOpenAI } from "openai";
+import OpenAI from "openai";
 import { WebSocket } from "ws";
 import {
   CustomLlmRequest,
