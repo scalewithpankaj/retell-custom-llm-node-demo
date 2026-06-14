@@ -279,16 +279,12 @@ const agentPrompt =
       }
     } catch (err) {
       console.error("Error in gpt stream: ", err);
-         } finally {
-    // You can copy and paste these exact bullet points as a future instruction prompt when you are ready for me to write the final production
-    // code:
-    // 1. External Integration Middleware & Client SetupImport Integration Libraries: Add imports for the chosen scheduling SDK (e.g., @calcom/embed-node, google-auth-library, axios for custom webhooks, or direct PMS middleware APIs).Initialize the Integration Client: Add an authenticated database or API client instance inside the FunctionCallingLlmClient class constructor alongside the OpenAIClient.Secure Environment Variables: Reference secure production variables (e.g., CLINIC_PMS_API_KEY, DENTRIX_WORKSPACE_ID, CALENDLY_WEBHOOK_SECRET) instead of mock placeholders.2. Update the check_availability Tool HandlerRemove Hardcoded Strings: Delete the static demoSlots conditional morning/afternoon strings from the function loop.Implement Live API Call: Replace the 2-second setTimeout loop with an asynchronous, awaited API fetch requesting real-time calendar availability based on the LLM's parsed arguments (funcCall.arguments.date and timePreference).Format Database Data for LLM: Add a string-parsing helper to clean up the raw JSON payload returned by your calendar (e.g., transforming a raw array of ISO timestamps into a human-friendly sentence like: "I have openings at 10:00 AM and 2:30 PM.").3. Update the book_appointment Tool HandlerRemove Mock Confirmations: Delete the hardcoded fake data-saving console payload blocks.Execute Mutation API Request: Write an asynchronous network call (POST request) to pass the complete collected patient schema (fullName, dob, phone, reason, appointmentSlot) directly to the clinic's software booking endpoint.Add Error and Collision Handling: Inject structural error handling logic. If the API returns a failure code (e.g., slot already taken, duplicate patient record, database offline), the code must intercept the error and instruct the LLM to apologize to the user and request an alternate time, instead of blindly hanging up the phone.4. Adjust the LLM Context Token LoopFeed Results back to Prompt: Modify the payload structure so that instead of sending the tool answer directly to the WebSocket (content), it returns the raw data back to the LLM's system memory using the role: "tool" structure. This allows the AI to decide how to phrase the available options naturally, rather than uttering a pre-written developer string.
-
+             } finally {
       if (funcCall != null) {
-        // Step 5: Call the functions
+        // Step 5: Safely parse the function arguments passed by the AI
         funcCall.arguments = JSON.parse(funcArguments);
 
-        // 1. Handle Graceful End Call
+        // If the AI explicitly decides it is time to end the call
         if (funcCall.funcName === "end_call") {
           const res: CustomLlmResponse = {
             response_type: "response",
@@ -298,96 +294,21 @@ const agentPrompt =
             end_call: true,
           };
           ws.send(JSON.stringify(res));
-        }
-
-        // 2. Handle check_availability (With morning vs. afternoon filtering + Keyboard Sound Simulation)
-        if (funcCall.funcName === "check_availability") {
-          const requestedDate = funcCall.arguments.date || "that day";
-          const preference = (funcCall.arguments.timePreference || "").toLowerCase();
-          
-          let demoSlots = "";
-          
-          if (preference.includes("morning") || preference.includes("am")) {
-            demoSlots = `For ${requestedDate}, I have morning openings at 9:00 AM and 10:30 AM.`;
-          } else if (preference.includes("afternoon") || preference.includes("evening") || preference.includes("pm")) {
-            demoSlots = `For ${requestedDate}, I have afternoon openings at 1:30 PM and 4:00 PM.`;
-          } else {
-            demoSlots = `For ${requestedDate}, we have openings at 10:00 AM, 1:30 PM, and 4:00 PM.`;
-          }
-
-          console.log(`[DEMO MODE] Simulating calendar lookup delay with audio clicks for ${requestedDate}...`);
-
-          // STEP A: Instantly say a holding phrase and include visual/audio typing cues for the TTS engine
-          const holdingRes: CustomLlmResponse = {
+        } else {
+          // For all other tools handled by n8n (check_availability, book_appointment):
+          // Send a clean, empty response signal to keep the real-time token flow open.
+          const res: CustomLlmResponse = {
             response_type: "response",
             response_id: request.response_id,
-            content: "Sure, let me check the clinic schedule for you right now... *click click*... just pulling up our calendar... *click*", 
-            content_complete: false, // Keep the turn open so the patient can't interrupt the "thinking" sequence
-            end_call: false,
-          };
-          ws.send(JSON.stringify(holdingRes));
-
-          // STEP B: Freeze execution for exactly 2 seconds to simulate network latency
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-
-          console.log(`[DEMO MODE] Delay finished. Pushing slots: ${demoSlots}`);
-
-          // STEP C: Push final times and officially hand the microphone back to the patient
-          const finalRes: CustomLlmResponse = {
-            response_type: "response",
-            response_id: request.response_id,
-            content: ` Okay, I see it here. ${demoSlots} Do any of those work for you?`, 
-            content_complete: true, 
-            end_call: false,
-          };
-          ws.send(JSON.stringify(finalRes));
-        }
-
-        // 3. Handle book_appointment (With Fake Data-Saving Delay + Console Log Schema Capture)
-        if (funcCall.funcName === "book_appointment") {
-          const patientName = funcCall.arguments.fullName || "you";
-          const chosenSlot = funcCall.arguments.appointmentSlot || "your requested time";
-          
-          console.log(`[DEMO MODE] Simulating database submission delay for ${patientName}...`);
-
-          // STEP A: Send an immediate "saving" holding phrase to maintain engagement
-          const savingRes: CustomLlmResponse = {
-            response_type: "response",
-            response_id: request.response_id,
-            content: "Perfect, I am entering your details into our system right now... *click click*... just a brief moment while it saves your file...",
-            content_complete: false,
-            end_call: false,
-          };
-          ws.send(JSON.stringify(savingRes));
-
-          // STEP B: Wait 2.5 seconds to simulate validation and file locking in Dentrix
-          await new Promise((resolve) => setTimeout(resolve, 2500));
-
-          // STEP C: Print the clean final data schema to the terminal for your demo audience
-          console.log(`\n==================================================`);
-          console.log(`🎉 DEMO CAPTURE: APPOINTMENT COMMITTED TO DATABASE`);
-          console.log(`==================================================`);
-          console.log(`Patient Name : ${funcCall.arguments.fullName}`);
-          console.log(`Date of Birth: ${funcCall.arguments.dob}`);
-          console.log(`Phone Number : ${funcCall.arguments.phone}`);
-          console.log(`Reason       : ${funcCall.arguments.reason}`);
-          console.log(`Locked Slot  : ${chosenSlot}`);
-          console.log(`==================================================\n`);
-          
-          const confirmationText = ` Done! I have locked in ${chosenSlot} for you, ${patientName}. You are completely set up, and you will receive a text confirmation on your mobile phone shortly. Thank you for calling Pickd, and have a wonderful day!`;
-
-          // STEP D: Deliver final execution confirmation text and drop the phone call link
-          const finalRes: CustomLlmResponse = {
-            response_type: "response",
-            response_id: request.response_id,
-            content: confirmationText,
+            content: "", // n8n will provide the spoken content via HTTP webhook
             content_complete: true,
-            end_call: true, // Hang up phone call seamlessly
+            end_call: false,
           };
-          ws.send(JSON.stringify(finalRes));
+          ws.send(JSON.stringify(res));
         }
 
       } else {
+        // Standard conversational turns (no tool execution requested)
         const res: CustomLlmResponse = {
           response_type: "response",
           response_id: request.response_id,
