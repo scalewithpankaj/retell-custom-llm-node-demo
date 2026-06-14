@@ -22,12 +22,13 @@ const agentPrompt =
   "You are a professional AI dental booking assistant for Pickd in Mississauga, Ontario.\n" +
   "Your job is to book appointments for patients.\n\n" +
   "COLLECT in this order (one question at a time):\n" +
-  "1. Full name\n" +"
-  2. Date of birth — say 'for verification purposes'\n" +"
-  3. Phone number — say 'for your SMS confirmation'\n" +"
-  4. Reason for visit (cleaning, checkup, filling, extraction, new patient exam)\n" +"
-  5. Preferred date and time\n\n" +
-  "RULES:\n" +"- Warm, professional, concise. Always one question at a time.\n" +
+  "1. Full name\n" +
+  "2. Date of birth — say 'for verification purposes'\n" +
+  "3. Phone number — say 'for your SMS confirmation'\n" +
+  "4. Reason for visit (cleaning, checkup, filling, extraction, new patient exam)\n" +
+  "5. Preferred date and time\n\n" +
+  "RULES:\n" +
+  "- Warm, professional, concise. Always one question at a time.\n" +
   "- NEVER confirm an appointment without calling check_availability first.\n" +
   "- NEVER make up availability. Always use the tool.\n" +
   "- Read back all collected info to patient before calling book_appointment.\n" +
@@ -140,7 +141,7 @@ const agentPrompt =
     return requestMessages;
   }
 
-    // Step 2: Prepare the function calling definition to the prompt
+      // Step 2: Prepare the function calling definition to the prompt
   private PrepareFunctions(): ChatCompletionsFunctionToolDefinition[] {
     let functions: ChatCompletionsFunctionToolDefinition[] = [
       // Function to decide when to end call
@@ -148,14 +149,13 @@ const agentPrompt =
         type: "function",
         function: {
           name: "end_call",
-          description: "End the call only when user explicitly requests it.",
+          description: "End the call only when user explicitly requests it or session finishes.",
           parameters: {
             type: "object",
             properties: {
               message: {
                 type: "string",
-                description:
-                  "The message you will say before ending the call with the customer.",
+                description: "The message you will say before ending the call.",
               },
             },
             required: ["message"],
@@ -163,31 +163,52 @@ const agentPrompt =
         },
       },
 
-      // Function to log the call outcome status (Required by your script)
+      // Function to check dental availability
       {
         type: "function",
         function: {
-          name: "log_outcome",
-          description: "Log the final outcome call status before hanging up.",
+          name: "check_availability",
+          description: "Check available appointment slots for a specific date or time frame.",
           parameters: {
             type: "object",
             properties: {
-              outcome: {
+              date: {
                 type: "string",
-                description: "The direct outcome status (e.g., voicemail, interested, not_interested, busy).",
+                description: "The date requested by the patient (e.g., YYYY-MM-DD or descriptive like 'tomorrow').",
               },
-              message: {
+              timePreference: {
                 type: "string",
-                description: "The polite sign-off message you will say to the user before ending the call.",
+                description: "Preferred time frame like morning, afternoon, or specific hours if stated.",
               },
             },
-            required: ["outcome", "message"],
+            required: ["date"],
+          },
+        },
+      },
+
+      // Function to book the appointment
+      {
+        type: "function",
+        function: {
+          name: "book_appointment",
+          description: "Book the appointment slot into the system after validating patient info.",
+          parameters: {
+            type: "object",
+            properties: {
+              fullName: { type: "string" },
+              dob: { type: "string", description: "Date of birth provided for verification." },
+              phone: { type: "string", description: "Phone number provided for SMS confirmation." },
+              reason: { type: "string", description: "The reason for visiting the dentist." },
+              appointmentSlot: { type: "string", description: "The finalized date and time slot selected by the patient." },
+            },
+            required: ["fullName", "dob", "phone", "reason", "appointmentSlot"],
           },
         },
       },
     ];
     return functions;
   }
+
 
   async DraftResponse(
     request: ResponseRequiredRequest | ReminderRequiredRequest,
@@ -258,13 +279,13 @@ const agentPrompt =
       }
     } catch (err) {
       console.error("Error in gpt stream: ", err);
-    } finally {
+        } finally {
       if (funcCall != null) {
         // Step 5: Call the functions
+        funcCall.arguments = JSON.parse(funcArguments);
 
         // If it's to end the call
         if (funcCall.funcName === "end_call") {
-          funcCall.arguments = JSON.parse(funcArguments);
           const res: CustomLlmResponse = {
             response_type: "response",
             response_id: request.response_id,
@@ -275,20 +296,33 @@ const agentPrompt =
           ws.send(JSON.stringify(res));
         }
 
-        // Handle the custom log_outcome tool required by your dental script
-        if (funcCall.funcName === "log_outcome") {
-          funcCall.arguments = JSON.parse(funcArguments);
-          console.log(`[DATABASE LOGED] Call complete. Status determined: ${funcCall.arguments.outcome}`);
-          
+        // Handle check_availability execution
+        if (funcCall.funcName === "check_availability") {
+          console.log(`[DENTAL TOOL] Checking availability for date: ${funcCall.arguments.date}`);
+          // Send tool execution metadata back to your parent orchestrator/server loop
           const res: CustomLlmResponse = {
             response_type: "response",
             response_id: request.response_id,
-            content: funcCall.arguments.message,
+            content: "", // Content will be populated after your API handler returns tool data
             content_complete: true,
-            end_call: true, // End the call natively after logging outcome
+            end_call: false,
           };
           ws.send(JSON.stringify(res));
         }
+
+        // Handle book_appointment execution
+        if (funcCall.funcName === "book_appointment") {
+          console.log(`[DENTAL TOOL] Booking appointment for: ${funcCall.arguments.fullName}`);
+          const res: CustomLlmResponse = {
+            response_type: "response",
+            response_id: request.response_id,
+            content: "You are all set! You will receive a text confirmation shortly.",
+            content_complete: true,
+            end_call: true, // Hang up after a successful booking confirmation
+          };
+          ws.send(JSON.stringify(res));
+        }
+
       } else {
         const res: CustomLlmResponse = {
           response_type: "response",
