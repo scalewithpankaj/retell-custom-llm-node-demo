@@ -6,6 +6,7 @@ import {
   ChatCompletionsFunctionToolDefinition,
 } from "@azure/openai";
 import { WebSocket } from "ws";
+import axios from "axios";
 import {
   CustomLlmRequest,
   CustomLlmResponse,
@@ -295,17 +296,62 @@ const agentPrompt =
           };
           ws.send(JSON.stringify(res));
         } else {
-          // For all other tools handled by n8n (check_availability, book_appointment):
-          // Send a clean, empty response signal to keep the real-time token flow open.
-          const res: CustomLlmResponse = {
-            response_type: "response",
-            response_id: request.response_id,
-            content: "", // n8n will provide the spoken content via HTTP webhook
-            content_complete: true,
-            end_call: false,
-          };
-          ws.send(JSON.stringify(res));
-        }
+  // 1. Identify which n8n webhook endpoint to target based on the tool requested
+  let targetUrl = "";
+  let payload = {};
+
+  if (funcCall.funcName === "check_availability") {
+    targetUrl = process.env.N8N_CHECK_AVAILABILITY_URL || "";
+    payload = {
+      body: {
+        preferred_date: funcCall.arguments.date,
+        time_preference: funcCall.arguments.timePreference
+      }
+    };
+  } else if (funcCall.funcName === "book_appointment") {
+    targetUrl = process.env.N8N_BOOK_APPOINTMENT_URL || "";
+    payload = {
+      body: {
+        patient_name: funcCall.arguments.fullName,
+        dob: funcCall.arguments.dob,
+        phone: funcCall.arguments.phone,
+        appointment_type: funcCall.arguments.reason,
+        slot_time: funcCall.arguments.appointmentSlot
+      }
+    };
+  }
+
+  // 2. Programmatically execute the backend request to your live n8n workflows
+  let spokenResponse = "I'm sorry, I am having trouble accessing the scheduling calendar right now.";
+  
+  if (targetUrl) {
+    try {
+      console.log(`Forwarding payload to n8n workflow (${funcCall.funcName}):`, payload);
+      const n8nResponse = await axios.post(targetUrl, payload);
+      
+      // Extract the slots or message returned directly by your n8n JavaScript Code node
+      if (funcCall.funcName === "check_availability" && n8nResponse.data?.slots) {
+        const slotsList = n8nResponse.data.slots.join(", or ");
+        spokenResponse = `I see openings on ${slotsList}. Which of those works for you?`;
+      } else if (funcCall.funcName === "book_appointment" && n8nResponse.data?.message) {
+        spokenResponse = n8nResponse.data.message;
+      }
+    } catch (n8nError) {
+      console.error("Failed to fetch data from n8n webhook instance:", n8nError);
+    }
+  }
+
+  // 3. Send the formatted text dynamically back to the active voice stream
+  const res: CustomLlmResponse = {
+    response_type: "response",
+    response_id: request.response_id,
+    content: spokenResponse,
+    content_complete: true,
+    end_call: false,
+  };
+  ws.send(JSON.stringify(res));
+}
+
 
       } else {
         // Standard conversational turns (no tool execution requested)
