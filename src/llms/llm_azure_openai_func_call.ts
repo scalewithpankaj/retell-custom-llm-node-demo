@@ -57,7 +57,7 @@ const agentPrompt =
     const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
     
     const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
-    const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2024-12-01-preview";
+    const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2024-10-21-preview";
 
     this.client = new OpenAIClient(
       endpoint,
