@@ -6,7 +6,6 @@ import {
   ChatCompletionsFunctionToolDefinition,
 } from "@azure/openai";
 import { WebSocket } from "ws";
-import axios from "axios";
 import {
   CustomLlmRequest,
   CustomLlmResponse,
@@ -321,20 +320,27 @@ const agentPrompt =
     };
   }
 
-  // 2. Programmatically execute the backend request to your live n8n workflows
+    // 2. Programmatically execute the backend request to your live n8n workflows
   let spokenResponse = "I'm sorry, I am having trouble accessing the scheduling calendar right now.";
   
   if (targetUrl) {
     try {
       console.log(`Forwarding payload to n8n workflow (${funcCall.funcName}):`, payload);
-      const n8nResponse = await axios.post(targetUrl, payload);
+      
+      const response = await fetch(targetUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      const n8nData: any = await response.json();
       
       // Extract the slots or message returned directly by your n8n JavaScript Code node
-      if (funcCall.funcName === "check_availability" && n8nResponse.data?.slots) {
-        const slotsList = n8nResponse.data.slots.join(", or ");
+      if (funcCall.funcName === "check_availability" && n8nData?.slots) {
+        const slotsList = n8nData.slots.join(", or ");
         spokenResponse = `I see openings on ${slotsList}. Which of those works for you?`;
-      } else if (funcCall.funcName === "book_appointment" && n8nResponse.data?.message) {
-        spokenResponse = n8nResponse.data.message;
+      } else if (funcCall.funcName === "book_appointment" && n8nData?.message) {
+        spokenResponse = n8nData.message;
       }
     } catch (n8nError) {
       console.error("Failed to fetch data from n8n webhook instance:", n8nError);
