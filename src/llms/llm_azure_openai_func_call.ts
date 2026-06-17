@@ -270,7 +270,32 @@ export class FunctionCallingLlmClient {
             console.error("n8n Webhook communication failed:", fetchError);
             toolResultText = JSON.stringify({ error: "Could not check availability. Try again." });
           }
-        } else {
+        } 
+        else if (funcCall.funcName === "book_appointment") {
+          try {
+            const response = await fetch("https://api.pickd.ca/webhook/book-appointment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                patient_name: funcCall.arguments.patient_name || "",
+                dob: funcCall.arguments.dob || "",
+                phone: funcCall.arguments.phone || "demo_phone",
+                appointment_type: funcCall.arguments.appointment_type || "",
+                slot_time: funcCall.arguments.slot_time || "",
+                clinic_id: funcCall.arguments.clinic_id || "demo_clinic"
+              }),
+            });
+            const data = await response.json();
+            toolResultText = JSON.stringify(data);
+          } catch (fetchError) {
+            console.error("n8n book-appointment Webhook failed:", fetchError);
+            toolResultText = JSON.stringify({ error: "Booking pipeline encountered an error." });
+          }
+        } 
+        else {
+          toolResultText = JSON.stringify({ status: "success", message: "Tool completed." });
+        }
+        else {
           toolResultText = JSON.stringify({ status: "success", message: "Tool completed." });
         }
 
