@@ -65,7 +65,7 @@ const agentPrompt =
       apiVersion: apiVersion,
     });
   }
-
+  }
 
   // First sentence requested
   BeginMessage(ws: WebSocket) {
