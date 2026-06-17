@@ -65,7 +65,6 @@ const agentPrompt =
       apiVersion: apiVersion,
     });
   }
-}
 
 
   // First sentence requested
