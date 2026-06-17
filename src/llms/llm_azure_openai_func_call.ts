@@ -12,10 +12,8 @@ import {
   Utterance,
 } from "../types";
 
-// (Imports and definitions remain as provided in the original file)
 const beginSentence = "Thank you for calling Pickd. This call is handled by Barkha, an AI assistant. How can I help you today?";
 
-// Agent prompt defined with specific dental booking flow, constraints, and safety guidelines
 const agentPrompt =
   "You are a professional AI dental booking assistant for Pickd in Mississauga, Ontario.\n" +
   "Your job is to book appointments for patients.\n\n" +
@@ -36,7 +34,6 @@ const agentPrompt =
   "- Do not discuss fees, insurance, or treatment plans.\n" +
   "- Do not collect health card or payment information.";
 
-
 export class FunctionCallingLlmClient {
   private client: AzureOpenAI;
 
@@ -52,7 +49,6 @@ export class FunctionCallingLlmClient {
     });
   }
 
-  // First sentence requested
   BeginMessage(ws: WebSocket) {
     const res: CustomLlmResponse = {
       response_type: "response",
@@ -64,7 +60,6 @@ export class FunctionCallingLlmClient {
     ws.send(JSON.stringify(res));
   }
 
-  // Converted conversation history to chat messages
   private ConversationToChatRequestMessages(conversation: Utterance[]): ChatCompletionMessageParam[] {
     let result: ChatCompletionMessageParam[] = [];
     for (let turn of conversation) {
@@ -76,7 +71,6 @@ export class FunctionCallingLlmClient {
     return result;
   }
 
-  // Prepared prompt with system instructions and tool results
   private PreparePrompt(
     request: ResponseRequiredRequest | ReminderRequiredRequest,
     funcResult?: FunctionCall,
@@ -85,7 +79,7 @@ export class FunctionCallingLlmClient {
     let requestMessages: ChatCompletionMessageParam[] = [
       {
         role: "system",
-        content: '##Objective\nYou are a voice AI agent... (See source for full instructions)\n\n## Role\n' + agentPrompt,
+        content: '## Objective\nYou are a voice AI agent specialized in dental bookings.\n\n## Role\n' + agentPrompt,
       },
     ];
     for (const message of transcript) {
@@ -123,7 +117,6 @@ export class FunctionCallingLlmClient {
     return requestMessages;
   }
 
-  // Defined tool definitions for function calling
   private PrepareFunctions(): ChatCompletionTool[] {
     let functions: ChatCompletionTool[] = [
       {
@@ -186,8 +179,7 @@ export class FunctionCallingLlmClient {
     return functions;
   }
 
-  // Streamed responses and handled tool calls
-    async DraftResponse(
+  async DraftResponse(
     request: ResponseRequiredRequest | ReminderRequiredRequest,
     ws: WebSocket,
     funcResult?: FunctionCall,
@@ -237,9 +229,7 @@ export class FunctionCallingLlmClient {
         }
       }
 
-      // --- EXECUTE THE TOOL AND SEND BACK TO OPENAI ---
       if (funcCall) {
-        // 1. Parse the text arguments accumulated from the stream into a JSON object
         if (funcArguments) {
           try {
             funcCall.arguments = JSON.parse(funcArguments);
@@ -252,22 +242,21 @@ export class FunctionCallingLlmClient {
         console.log(`Executing tool: ${funcCall.funcName}`, funcCall.arguments);
         let toolResultText = "";
 
-        // 2. Direct the execution depending on which function OpenAI requested
         if (funcCall.funcName === "check_availability") {
           try {
-            const response = await fetch("https://api.pickd.ca/webhook-test/check-availability", {
+            const response = await fetch("https://api.pickd.ca/webhook/check-availability", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                appointment_type: funcCall.arguments.appointment_type || "cleaning",
-                preferred_date: funcCall.arguments.preferred_date || "",
-                clinic_id: funcCall.arguments.clinic_id || "demo_clinic"
+                appointment_type: funcCall.arguments.timePreference || "cleaning",
+                preferred_date: funcCall.arguments.date || "",
+                clinic_id: "demo_clinic"
               }),
             });
             const data = await response.json();
             toolResultText = JSON.stringify(data);
           } catch (fetchError) {
-            console.error("n8n Webhook communication failed:", fetchError);
+            console.error("n8n check-availability Webhook failed:", fetchError);
             toolResultText = JSON.stringify({ error: "Could not check availability. Try again." });
           }
         } 
@@ -277,12 +266,12 @@ export class FunctionCallingLlmClient {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                patient_name: funcCall.arguments.patient_name || "",
+                patient_name: funcCall.arguments.fullName || "",
                 dob: funcCall.arguments.dob || "",
                 phone: funcCall.arguments.phone || "demo_phone",
-                appointment_type: funcCall.arguments.appointment_type || "",
-                slot_time: funcCall.arguments.slot_time || "",
-                clinic_id: funcCall.arguments.clinic_id || "demo_clinic"
+                appointment_type: funcCall.arguments.reason || "",
+                slot_time: funcCall.arguments.appointmentSlot || "",
+                clinic_id: "demo_clinic"
               }),
             });
             const data = await response.json();
@@ -291,20 +280,18 @@ export class FunctionCallingLlmClient {
             console.error("n8n book-appointment Webhook failed:", fetchError);
             toolResultText = JSON.stringify({ error: "Booking pipeline encountered an error." });
           }
-        } 
-        else {
+}
+        else 
+        {
           toolResultText = JSON.stringify({ status: "success", message: "Tool completed." });
         }
-
-        // 3. Attach the tool execution payload data back into the conversation context loop
         funcCall.result = toolResultText;
-
-        // 4. Re-run DraftResponse recursively so OpenAI evaluates the tool result and speaks
         await this.DraftResponse(request, ws, funcCall);
       }
-
-    } catch (error) {
-        console.error("Error drafting response:", error);
+    } 
+    catch (error) 
+    {
+      console.error("Error drafting response:", error);
     }
   }
-
+}
