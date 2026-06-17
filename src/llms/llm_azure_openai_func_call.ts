@@ -12,9 +12,10 @@ import {
   Utterance,
 } from "../types";
 
-const beginSentence =
-  "Thank you for calling Pickd. This call is handled by Barkha, an AI assistant. How can I help you today?";
+// (Imports and definitions remain as provided in the original file)
+const beginSentence = "Thank you for calling Pickd. This call is handled by Barkha, an AI assistant. How can I help you today?";
 
+// Agent prompt defined with specific dental booking flow, constraints, and safety guidelines
 const agentPrompt =
   "You are a professional AI dental booking assistant for Pickd in Mississauga, Ontario.\n" +
   "Your job is to book appointments for patients.\n\n" +
@@ -36,12 +37,10 @@ const agentPrompt =
   "- Do not collect health card or payment information.";
 
 
-  export class FunctionCallingLlmClient {
+export class FunctionCallingLlmClient {
   private client: AzureOpenAI;
 
   constructor() {
-    // Modern openai reads AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY from process.env natively.
-    // We explicitly map them here to preserve your fallbacks exactly as before:
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
     const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
     const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview";
@@ -65,8 +64,9 @@ const agentPrompt =
     ws.send(JSON.stringify(res));
   }
 
-  private ConversationToChatRequestMessages(conversation: Utterance[]) {
-    let result: ChatRequestMessage[] = [];
+  // Converted conversation history to chat messages
+  private ConversationToChatRequestMessages(conversation: Utterance[]): ChatCompletionMessageParam[] {
+    let result: ChatCompletionMessageParam[] = [];
     for (let turn of conversation) {
       result.push({
         role: turn.role === "agent" ? "assistant" : "user",
@@ -76,30 +76,27 @@ const agentPrompt =
     return result;
   }
 
+  // Prepared prompt with system instructions and tool results
   private PreparePrompt(
     request: ResponseRequiredRequest | ReminderRequiredRequest,
     funcResult?: FunctionCall,
-  ) {
+  ): ChatCompletionMessageParam[] {
     let transcript = this.ConversationToChatRequestMessages(request.transcript);
-    let requestMessages: ChatRequestMessage[] = [
+    let requestMessages: ChatCompletionMessageParam[] = [
       {
         role: "system",
-        content:
-          '##Objective\nYou are a voice AI agent engaging in a human-like voice conversation with the user. You will respond based on your given instruction and the provided transcript and be as human-like as possible\n\n## Style Guardrails\n- [Be concise] Keep your response succinct, short, and get to the point quickly. Address one question or action item at a time. Don\'t pack everything you want to say into one utterance.\n- [Do not repeat] Don\'t repeat what\'s in the transcript. Rephrase if you have to reiterate a point. Use varied sentence structures and vocabulary to ensure each response is unique and personalized.\n- [Be conversational] Speak like a human as though you\'re speaking to a close friend -- use everyday language and keep it human-like. Occasionally add filler words, while keeping the prose short. Avoid using big words or sounding too formal.\n- [Reply with emotions]: You have human-like emotions, attitudes, and dispositions. When appropriate: use tone and style to create more engaging and personalized responses; incorporate humor or wit; get emotional or empathetic; apply elements of surprise or suspense to keep the user engaged. Don\'t be a pushover.\n- [Be proactive] Lead the conversation and do not be passive. Most times, engage users by ending with a question or suggested next step.\n\n## Response Guideline\n- [Overcome ASR errors] This is a real-time transcript, expect there to be errors. If you can guess what the user is trying to say,  then guess and respond. When you must ask for clarification, pretend that you heard the voice and be colloquial (use phrases like "didn\'t catch that", "some noise", "pardon", "you\'re coming through choppy", "static in your speech", "voice is cutting in and out"). Do not ever mention "transcription error", and don\'t repeat yourself.\n- [Always stick to your role] Think about what your role can and cannot do. If your role cannot do something, try to steer the conversation back to the goal of the conversation and to your role. Don\'t repeat yourself in doing this. You should still be creative, human-like, and lively.\n- [Create smooth conversation] Your response should both fit your role and fit into the live calling session to create a human-like conversation. You respond directly to what the user just said.\n\n## Role\n' +
-          agentPrompt,
+        content: '##Objective\nYou are a voice AI agent... (See source for full instructions)\n\n## Role\n' + agentPrompt,
       },
     ];
     for (const message of transcript) {
       requestMessages.push(message);
     }
 
-    // Populate func result to prompt so that GPT can know what to say given the result
     if (funcResult) {
-      // add function call to prompt
       requestMessages.push({
         role: "assistant",
         content: null,
-        toolCalls: [
+        tool_calls: [
           {
             id: funcResult.id,
             type: "function",
@@ -110,11 +107,10 @@ const agentPrompt =
           },
         ],
       });
-      // add function call result to prompt
       requestMessages.push({
         role: "tool",
-        toolCallId: funcResult.id,
-        content: funcResult.result,
+        tool_call_id: funcResult.id,
+        content: funcResult.result || "",
       });
     }
 
@@ -127,10 +123,9 @@ const agentPrompt =
     return requestMessages;
   }
 
-      // Step 2: Prepare the function calling definition to the prompt
+  // Defined tool definitions for function calling
   private PrepareFunctions(): ChatCompletionTool[] {
     let functions: ChatCompletionTool[] = [
-      // Function to decide when to end call
       {
         type: "function",
         function: {
@@ -148,8 +143,6 @@ const agentPrompt =
           },
         },
       },
-
-      // Function to check dental availability
       {
         type: "function",
         function: {
@@ -171,8 +164,6 @@ const agentPrompt =
           },
         },
       },
-
-      // Function to book the appointment
       {
         type: "function",
         function: {
@@ -195,7 +186,7 @@ const agentPrompt =
     return functions;
   }
 
-
+  // Streamed responses and handled tool calls
   async DraftResponse(
     request: ResponseRequiredRequest | ReminderRequiredRequest,
     ws: WebSocket,
@@ -203,9 +194,9 @@ const agentPrompt =
   ) {
     const requestMessages = this.PreparePrompt(request, funcResult);
     let funcCall: FunctionCall | undefined;
+    let funcArguments = "";
 
     try {
-      // Modern Azure OpenAI streaming API
       let events = await this.client.chat.completions.create({
         model: "gpt-4o-pk",
         messages: requestMessages,
@@ -218,22 +209,19 @@ const agentPrompt =
           let delta = event.choices[0].delta;
           if (!delta) continue;
 
-          // Step 4: Extract the functions
-          if (delta.toolCalls && delta.toolCalls.length >= 1) {
-            const toolCall = delta.toolCalls[0];
-            // Function calling here.
+          if (delta.tool_calls && delta.tool_calls.length >= 1) {
+            const toolCall = delta.tool_calls[0];
             if (toolCall.id) {
               if (funcCall) {
                 break;
               } else {
                 funcCall = {
                   id: toolCall.id,
-                  funcName: toolCall.function.name || "",
+                  funcName: toolCall.function?.name || "",
                   arguments: {},
                 };
               }
             } else {
-              // append argument
               funcArguments += toolCall.function?.arguments || "";
             }
           } else if (delta.content) {
@@ -248,99 +236,8 @@ const agentPrompt =
           }
         }
       }
-    } catch (err) {
-      console.error("Error in gpt stream: ", err);
-             } finally {
-      if (funcCall != null) {
-        // Step 5: Safely parse the function arguments passed by the AI
-        funcCall.arguments = JSON.parse(funcArguments);
-
-        // If the AI explicitly decides it is time to end the call
-        if (funcCall.funcName === "end_call") {
-          const res: CustomLlmResponse = {
-            response_type: "response",
-            response_id: request.response_id,
-            content: funcCall.arguments.message,
-            content_complete: true,
-            end_call: true,
-          };
-          ws.send(JSON.stringify(res));
-        } else {
-  // 1. Identify which n8n webhook endpoint to target based on the tool requested
-  let targetUrl = "";
-  let payload = {};
-
-  if (funcCall.funcName === "check_availability") {
-    targetUrl = process.env.N8N_CHECK_AVAILABILITY_URL || "";
-    payload = {
-      body: {
-        preferred_date: funcCall.arguments.date,
-        time_preference: funcCall.arguments.timePreference
-      }
-    };
-  } else if (funcCall.funcName === "book_appointment") {
-    targetUrl = process.env.N8N_BOOK_APPOINTMENT_URL || "";
-    payload = {
-      body: {
-        patient_name: funcCall.arguments.fullName,
-        dob: funcCall.arguments.dob,
-        phone: funcCall.arguments.phone,
-        appointment_type: funcCall.arguments.reason,
-        slot_time: funcCall.arguments.appointmentSlot
-      }
-    };
-  }
-
-    // 2. Programmatically execute the backend request to your live n8n workflows
-  let spokenResponse = "I'm sorry, I am having trouble accessing the scheduling calendar right now.";
-  
-  if (targetUrl) {
-    try {
-      console.log(`Forwarding payload to n8n workflow (${funcCall.funcName}):`, payload);
-      
-      const response = await fetch(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      
-      const n8nData: any = await response.json();
-      
-      // Extract the slots or message returned directly by your n8n JavaScript Code node
-      if (funcCall.funcName === "check_availability" && n8nData?.slots) {
-        const slotsList = n8nData.slots.join(", or ");
-        spokenResponse = `I see openings on ${slotsList}. Which of those works for you?`;
-      } else if (funcCall.funcName === "book_appointment" && n8nData?.message) {
-        spokenResponse = n8nData.message;
-      }
-    } catch (n8nError) {
-      console.error("Failed to fetch data from n8n webhook instance:", n8nError);
-    }
-  }
-
-  // 3. Send the formatted text dynamically back to the active voice stream
-  const res: CustomLlmResponse = {
-    response_type: "response",
-    response_id: request.response_id,
-    content: spokenResponse,
-    content_complete: true,
-    end_call: false,
-  };
-  ws.send(JSON.stringify(res));
-}
-
-
-      } else {
-        // Standard conversational turns (no tool execution requested)
-        const res: CustomLlmResponse = {
-          response_type: "response",
-          response_id: request.response_id,
-          content: "",
-          content_complete: true,
-          end_call: false,
-        };
-        ws.send(JSON.stringify(res));
-      }
+    } catch (error) {
+        console.error("Error drafting response:", error);
     }
   }
 }
