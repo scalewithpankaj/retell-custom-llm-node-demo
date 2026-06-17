@@ -1,14 +1,10 @@
-import {
-  OpenAIClient,
-  AzureKeyCredential,
-  ChatRequestMessage,
-  GetChatCompletionsOptions,
-  ChatCompletionsFunctionToolDefinition,
-} from "@azure/openai";
 import { AzureOpenAI } from "openai";
+import type { 
+  ChatCompletionMessageParam, 
+  ChatCompletionTool 
+} from "openai/resources/index";
 import { WebSocket } from "ws";
 import {
-  CustomLlmRequest,
   CustomLlmResponse,
   FunctionCall,
   ReminderRequiredRequest,
@@ -39,15 +35,6 @@ const agentPrompt =
   "- Do not discuss fees, insurance, or treatment plans.\n" +
   "- Do not collect health card or payment information.";
 
-// export class FunctionCallingLlmClient {
-//   private client: OpenAIClient;
-
-//   constructor() {
-//     this.client = new OpenAIClient(
-//       process.env.AZURE_OPENAI_ENDPOINT,
-//       new AzureKeyCredential(process.env.AZURE_OPENAI_KEY),
-//     );
-//   }
 
   export class FunctionCallingLlmClient {
   private client: AzureOpenAI;
@@ -64,7 +51,6 @@ const agentPrompt =
       apiKey: apiKey,
       apiVersion: apiVersion,
     });
-  }
   }
 
   // First sentence requested
@@ -142,8 +128,8 @@ const agentPrompt =
   }
 
       // Step 2: Prepare the function calling definition to the prompt
-  private PrepareFunctions(): ChatCompletionsFunctionToolDefinition[] {
-    let functions: ChatCompletionsFunctionToolDefinition[] = [
+  private PrepareFunctions(): ChatCompletionTool[] {
+    let functions: ChatCompletionTool[] = [
       // Function to decide when to end call
       {
         type: "function",
@@ -215,32 +201,17 @@ const agentPrompt =
     ws: WebSocket,
     funcResult?: FunctionCall,
   ) {
-    // If there are function call results, add it to prompt here.
-    const requestMessages: ChatRequestMessage[] = this.PreparePrompt(
-      request,
-      funcResult,
-    );
-
-    const option: GetChatCompletionsOptions = {
-      temperature: 0.3,
-      maxTokens: 200,
-      frequencyPenalty: 1,
-      // Step 3: Add the function into your request
-      tools: this.PrepareFunctions(),
-    };
-
-    let funcCall: FunctionCall;
-    let funcArguments = "";
+    const requestMessages = this.PreparePrompt(request, funcResult);
+    let funcCall: FunctionCall | undefined;
 
     try {
-  // Revert this method back to use the original streamChatCompletions function
-  let events = await this.client.streamChatCompletions(
-    "gpt-4o-pk",
-    requestMessages,
-    option,
-  );
-
-
+      // Modern Azure OpenAI streaming API
+      let events = await this.client.chat.completions.create({
+        model: "gpt-4o-pk",
+        messages: requestMessages,
+        tools: this.PrepareFunctions(),
+        stream: true,
+      });
 
       for await (const event of events) {
         if (event.choices.length >= 1) {
