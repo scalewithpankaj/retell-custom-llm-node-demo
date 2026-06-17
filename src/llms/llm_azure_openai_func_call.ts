@@ -187,7 +187,7 @@ export class FunctionCallingLlmClient {
   }
 
   // Streamed responses and handled tool calls
-  async DraftResponse(
+    async DraftResponse(
     request: ResponseRequiredRequest | ReminderRequiredRequest,
     ws: WebSocket,
     funcResult?: FunctionCall,
@@ -236,6 +236,51 @@ export class FunctionCallingLlmClient {
           }
         }
       }
+
+      // --- EXECUTE THE TOOL AND SEND BACK TO OPENAI ---
+      if (funcCall) {
+        // 1. Parse the text arguments accumulated from the stream into a JSON object
+        if (funcArguments) {
+          try {
+            funcCall.arguments = JSON.parse(funcArguments);
+          } catch (e) {
+            console.error("Failed to parse tool arguments:", funcArguments);
+            funcCall.arguments = {};
+          }
+        }
+
+        console.log(`Executing tool: ${funcCall.funcName}`, funcCall.arguments);
+        let toolResultText = "";
+
+        // 2. Direct the execution depending on which function OpenAI requested
+        if (funcCall.funcName === "check-availability") {
+          try {
+            const response = await fetch("https://api.pickd.ca/webhook-test/check-availability", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                appointment_type: funcCall.arguments.appointment_type || "cleaning",
+                preferred_date: funcCall.arguments.preferred_date || "",
+                clinic_id: funcCall.arguments.clinic_id || request.from_number || "demo_clinic"
+              }),
+            });
+            const data = await response.json();
+            toolResultText = JSON.stringify(data);
+          } catch (fetchError) {
+            console.error("n8n Webhook communication failed:", fetchError);
+            toolResultText = JSON.stringify({ error: "Could not check availability. Try again." });
+          }
+        } else {
+          toolResultText = JSON.stringify({ status: "success", message: "Tool completed." });
+        }
+
+        // 3. Attach the tool execution payload data back into the conversation context loop
+        funcCall.result = toolResultText;
+
+        // 4. Re-run DraftResponse recursively so OpenAI evaluates the tool result and speaks
+        await this.DraftResponse(request, ws, funcCall);
+      }
+
     } catch (error) {
         console.error("Error drafting response:", error);
     }
