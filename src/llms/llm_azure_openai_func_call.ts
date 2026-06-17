@@ -253,7 +253,7 @@ export class FunctionCallingLlmClient {
         let toolResultText = "";
 
         // 2. Direct the execution depending on which function OpenAI requested
-        if (funcCall.funcName === "check-availability") {
+        if (funcCall.funcName === "check_availability") {
           try {
             const response = await fetch("https://api.pickd.ca/webhook-test/check-availability", {
               method: "POST",
@@ -261,7 +261,7 @@ export class FunctionCallingLlmClient {
               body: JSON.stringify({
                 appointment_type: funcCall.arguments.appointment_type || "cleaning",
                 preferred_date: funcCall.arguments.preferred_date || "",
-                clinic_id: funcCall.arguments.clinic_id || request.from_number || "demo_clinic"
+                clinic_id: funcCall.arguments.clinic_id || "demo_clinic"
               }),
             });
             const data = await response.json();
