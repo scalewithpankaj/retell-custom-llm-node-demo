@@ -310,4 +310,4 @@ export class FunctionCallingLlmClient {
         console.error("Error drafting response:", error);
     }
   }
-}
+
