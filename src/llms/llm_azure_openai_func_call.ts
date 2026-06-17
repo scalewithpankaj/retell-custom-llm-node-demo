@@ -250,7 +250,7 @@ export class FunctionCallingLlmClient {
               body: JSON.stringify({
                 appointment_type: funcCall.arguments.timePreference || "cleaning",
                 preferred_date: funcCall.arguments.date || "",
-                clinic_id: "demo_clinic"
+                clinic_id: funcCall.arguments.clinic_id || "00000000-0000-0000-0000-000000000000"
               }),
             });
             const data = await response.json();
@@ -271,7 +271,7 @@ export class FunctionCallingLlmClient {
                 phone: funcCall.arguments.phone || "demo_phone",
                 appointment_type: funcCall.arguments.reason || "",
                 slot_time: funcCall.arguments.appointmentSlot || "",
-                clinic_id: "demo_clinic"
+                clinic_id: "00000000-0000-0000-0000-000000000000"
               }),
             });
             const data = await response.json();
