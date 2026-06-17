@@ -5,6 +5,7 @@ import {
   GetChatCompletionsOptions,
   ChatCompletionsFunctionToolDefinition,
 } from "@azure/openai";
+import { AzureOpenAI } from "openai";
 import { WebSocket } from "ws";
 import {
   CustomLlmRequest,
@@ -49,22 +50,22 @@ const agentPrompt =
 //   }
 
   export class FunctionCallingLlmClient {
-  private client: OpenAIClient;
+  private client: AzureOpenAI;
 
   constructor() {
-    const baseEndpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
-    // Mandate the trailing /openai string so Azure AI Foundry maps correctly
-    const endpoint = baseEndpoint.endsWith("/openai") ? baseEndpoint : `${baseEndpoint}/openai`;
-    
+    // Modern openai reads AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY from process.env natively.
+    // We explicitly map them here to preserve your fallbacks exactly as before:
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
     const apiKey = process.env.AZURE_OPENAI_KEY || process.env.OPENAI_API_KEY || "";
     const apiVersion = process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview";
 
-    this.client = new OpenAIClient(
-      endpoint,
-      new AzureKeyCredential(apiKey),
-      { apiVersion: apiVersion }
-    );
+    this.client = new AzureOpenAI({
+      endpoint: endpoint,
+      apiKey: apiKey,
+      apiVersion: apiVersion,
+    });
   }
+}
 
 
   // First sentence requested
