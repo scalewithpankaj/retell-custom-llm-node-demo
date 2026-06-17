@@ -295,9 +295,6 @@ export class FunctionCallingLlmClient {
         else {
           toolResultText = JSON.stringify({ status: "success", message: "Tool completed." });
         }
-        else {
-          toolResultText = JSON.stringify({ status: "success", message: "Tool completed." });
-        }
 
         // 3. Attach the tool execution payload data back into the conversation context loop
         funcCall.result = toolResultText;
