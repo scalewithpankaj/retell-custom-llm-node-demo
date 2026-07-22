@@ -168,7 +168,7 @@ export class FunctionCallingLlmClient {
     return result;
   }
 
-  private PreparePrompt(
+    private PreparePrompt(
     request: ResponseRequiredRequest | ReminderRequiredRequest,
     funcResult?: FunctionCall,
   ): ChatCompletionMessageParam[] {
@@ -176,7 +176,7 @@ export class FunctionCallingLlmClient {
     let requestMessages: ChatCompletionMessageParam[] = [
       {
         role: "system",
-        content: '## Objective\nYou are a voice AI agent specialized in dental bookings.\n\n## Role\n' + agentPrompt,
+        content: '## Objective\nYou are a voice AI agent specialized in mobile barbershop and salon bookings.\n\n## Role\n' + agentPrompt,
       },
     ];
     for (const message of transcript) {
@@ -237,20 +237,20 @@ export class FunctionCallingLlmClient {
         type: "function",
         function: {
           name: "check_availability",
-          description: "Check available appointment slots for a specific date or time frame.",
+          description: "Check available appointment slots for a specific date or time window.",
           parameters: {
             type: "object",
             properties: {
-              date: {
+              preferred_date: {
                 type: "string",
-                description: "The date requested by the patient (e.g., YYYY-MM-DD or descriptive like 'tomorrow').",
+                description: "The date requested by the customer (e.g., YYYY-MM-DD, 'today', or 'tomorrow').",
               },
-              timePreference: {
+              service_name: {
                 type: "string",
-                description: "Preferred time frame like morning, afternoon, or specific hours if stated.",
+                description: "The specific grooming service being requested.",
               },
             },
-            required: ["date"],
+            required: ["preferred_date", "service_name"],
           },
         },
       },
@@ -258,17 +258,19 @@ export class FunctionCallingLlmClient {
         type: "function",
         function: {
           name: "book_appointment",
-          description: "Book the appointment slot into the system after validating patient info.",
+          description: "Finalize and book the appointment slot into the database after user details are verbally confirmed.",
           parameters: {
             type: "object",
             properties: {
-              fullName: { type: "string" },
-              dob: { type: "string", description: "Date of birth provided for verification." },
-              phone: { type: "string", description: "Phone number provided for SMS confirmation." },
-              reason: { type: "string", description: "The reason for visiting the dentist." },
-              appointmentSlot: { type: "string", description: "The finalized date and time slot selected by the patient." },
+              customer_name: { type: "string", description: "First and last name of the customer." },
+              customer_phone: { type: "string", description: "Mobile number provided for SMS confirmation." },
+              customer_address: { type: "string", description: "Full delivery address including unit numbers, city, and postal code." },
+              service_name: { type: "string", description: "The finalized service package or comma-separated list of group services." },
+              slot_time: { type: "string", description: "The chosen appointment date and verbal time string confirmed by the customer." },
+              group_size: { type: "integer", description: "Total count of people included in this booking sequence. Defaults to 1." },
+              special_requests: { type: "string", description: "Any special requests, notes for the team, or per-person structural details." },
             },
-            required: ["fullName", "dob", "phone", "reason", "appointmentSlot"],
+            required: ["customer_name", "customer_phone", "customer_address", "service_name", "slot_time"],
           },
         },
       },
@@ -291,7 +293,7 @@ export class FunctionCallingLlmClient {
         messages: requestMessages,
         tools: this.PrepareFunctions(),
         stream: true,
-        temperature: 0.7,      // Raised from lower defaults to allow realistic, varied verbal expressions
+        temperature: 0.7,      
         presence_penalty: 0.3,
       });
 
@@ -340,46 +342,52 @@ export class FunctionCallingLlmClient {
 
         console.log(`Executing tool: ${funcCall.funcName}`, funcCall.arguments);
         let toolResultText = "";
+        
+        // Single unified endpoint used for workflow targeting
+        const n8nWebhookUrl = "https://api.pickd.ca/webhook/haircutathome-booking";
 
         if (funcCall.funcName === "check_availability") {
           try {
-            const response = await fetch("https://api.pickd.ca/webhook/check-availability", {
+            const response = await fetch(n8nWebhookUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                appointment_type: funcCall.arguments.timePreference || "cleaning",
-                preferred_date: funcCall.arguments.date || "",
-                clinic_id: funcCall.arguments.clinic_id || "00000000-0000-0000-0000-000000000000"
+                action: "check_availability", // Routes to n8n logic True branch
+                preferred_date: funcCall.arguments.preferred_date || "",
+                service_name: funcCall.arguments.service_name || ""
               }),
             });
             const data = await response.json();
             toolResultText = JSON.stringify(data);
           } catch (fetchError) {
-            console.error("n8n check-availability Webhook failed:", fetchError);
-            toolResultText = JSON.stringify({ error: "Could not check availability. Try again." });
+            console.error("n8n check-availability workflow call failed:", fetchError);
+            toolResultText = JSON.stringify({ error: "Could not fetch open availability slots." });
           }
         } 
         else if (funcCall.funcName === "book_appointment") {
           try {
-            const response = await fetch("https://api.pickd.ca/webhook/book-appointment", {
+            const response = await fetch(n8nWebhookUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                patient_name: funcCall.arguments.fullName || "",
-                dob: funcCall.arguments.dob || "",
-                phone: funcCall.arguments.phone || "demo_phone",
-                appointment_type: funcCall.arguments.reason || "",
-                slot_time: funcCall.arguments.appointmentSlot || "",
-                clinic_id: "00000000-0000-0000-0000-000000000000"
+                action: "book_appointment", // Routes to n8n logic False branch
+                customer_name: funcCall.arguments.customer_name || "",
+                customer_phone: funcCall.arguments.customer_phone || "",
+                customer_address: funcCall.arguments.customer_address || "",
+                service_name: funcCall.arguments.service_name || "",
+                slot_time: funcCall.arguments.slot_time || "",
+                group_size: funcCall.arguments.group_size || 1,
+                special_requests: funcCall.arguments.special_requests || "None",
+                call_id: request.call_id || "demo_call_session" // Captures Retell call metadata string
               }),
             });
             const data = await response.json();
             toolResultText = JSON.stringify(data);
           } catch (fetchError) {
-            console.error("n8n book-appointment Webhook failed:", fetchError);
-            toolResultText = JSON.stringify({ error: "Booking pipeline encountered an error." });
+            console.error("n8n book-appointment workflow call failed:", fetchError);
+            toolResultText = JSON.stringify({ error: "Grooming booking pipeline failed to save." });
           }
-}
+        }
         else 
         {
           toolResultText = JSON.stringify({ status: "success", message: "Tool completed." });
