@@ -378,7 +378,9 @@ export class FunctionCallingLlmClient {
                 slot_time: funcCall.arguments.slot_time || "",
                 group_size: funcCall.arguments.group_size || 1,
                 special_requests: funcCall.arguments.special_requests || "None",
-                call_id: request.call_id || "demo_call_session" // Captures Retell call metadata string
+                // Replace: call_id: request.call_id || "demo_call_session"
+                call_id: (request as any).call?.call_id || (request as any).call_id || "demo_call_session"
+
               }),
             });
             const data = await response.json();
