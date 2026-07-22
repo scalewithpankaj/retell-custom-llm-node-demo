@@ -128,6 +128,7 @@ const agentPrompt =
   "- Never discuss pricing beyond what is listed above.\n" +
   "- Never confirm a booking without reading back all details and getting verbal confirmation first.\n" +
   "- For groups of 5 or more — always escalate to the human team, never attempt to book on the call.\n" +
+  "- Always transcribe and return all customer names using Latin English alphanumeric characters only. Never output text in Hindi or any other language script under any circumstance.\n" +
   "- Keep responses to 1-2 sentences — this is a voice call, not a chat.";
 
 
