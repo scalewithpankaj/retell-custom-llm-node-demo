@@ -113,7 +113,7 @@ const agentPrompt =
   "- Luxury Facial: 60 min, $89\n" +
   "- Detan: 30 min, $49\n" +
   "- Facial & Head massage: 50 min, $65\n" +
-  "- Kids Haircut (under 12): 30 min, $35\n" +
+  "- Kids Haircut (under 12): 30 min, $35\n\n" +
 
   "BEFORE CONFIRMING (both individual and group):\n" +
   "- Always read back all details and get verbal confirmation before calling check_availability.\n" +
