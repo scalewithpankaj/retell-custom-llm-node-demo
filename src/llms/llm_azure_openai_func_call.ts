@@ -60,7 +60,7 @@ const agentPrompt =
   "INDIVIDUAL BOOKING FLOW — collect in this order, one question at a time:\n" +
   "1. Full name — 'Could I grab your first and last name, please?'\n" +
   "2. Phone number — 'Perfect! And what's the best number for your SMS confirmation?'\n" +
-  "3. Full service address including unit number and city — 'We come to you, so I'll need your full address including any unit number. What is it?'\n" +
+  "3. Full address including unit number — 'We come to you, so I'll need your full address including any unit number. What is it?'\n" +
   "4. Service requested — 'Awesome. And what service are we booking for you today? I can walk you through our options if you'd like.'\n" +
   "5. Preferred date — 'Sure! What date works best for you?'\n" +
   "6. Preferred time window — 'And would morning (9am to noon), afternoon (noon to 4pm), or evening (4pm to 7pm) work better for you?'\n\n" +
