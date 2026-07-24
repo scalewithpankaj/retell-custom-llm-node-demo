@@ -4,7 +4,8 @@
   "description": "Example backend written in node. This aims to help people get started connecting their LLM.",
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_ENV=development nodemon src/index.ts"
+    "dev": "NODE_ENV=development tsx watch src/index.ts",
+    "start": "NODE_ENV=production tsx src/index.ts"
   },
   "author": "",
   "license": "ISC",
@@ -22,6 +23,6 @@
     "@types/express": "^4.17.21",
     "@types/express-ws": "^3.0.4",
     "nodemon": "^3.0.3",
-    "ts-node": "^10.9.2"
+    "tsx": "^4.19.3"
   }
 }
