@@ -263,20 +263,25 @@ export class FunctionCallingLlmClient {
         type: "function",
         function: {
           name: "check_availability",
-          description: "Check available appointment slots for a specific date or time window.",
+          description: "Check available appointment slots for a specific date and time.",
           parameters: {
             type: "object",
             properties: {
-              preferred_date: {
+              requested_time: {
                 type: "string",
-                description: "The date requested by the customer. CRITICAL: You MUST normalize this into a strict ISO 8601 string format (YYYY-MM-DD) or use explicitly either 'today' or 'tomorrow' only. Never pass phrases like 'day after tomorrow'.",
+                description: "CRITICAL: Combine the date and time requested by the customer into a strict ISO 8601 Timestamp format (e.g., YYYY-MM-DDTHH:MM:SS). If the user only says 'tomorrow afternoon', infer a logical start time like 14:00:00. Always ensure the year matches the current context year.",
               },
               service_name: {
                 type: "string",
                 description: "The exact name of the grooming service requested. Must match official business service catalog items perfectly (e.g., 'Regular Haircut (Men)', 'Highlights', 'Men's Senior cut').",
               },
+              action: {
+                type: "string",
+                description: "Must always be hardcoded/passed as 'check_availability' so the backend router knows where to send it.",
+                enum: ["check_availability"]
+              }
             },
-            required: ["preferred_date", "service_name"],
+            required: ["requested_time", "service_name", "action"],
           },
         },
       },
@@ -297,12 +302,17 @@ export class FunctionCallingLlmClient {
               },
               slot_time: { 
                 type: "string", 
-                description: "CRITICAL: Convert the chosen appointment date and verbal time string into a strict ISO 8601 Timestamp format (YYYY-MM-DD HH:MM:SS) based on the current context year. Never pass verbal descriptors like 'evening' or 'afternoon'." 
+                description: "CRITICAL: Convert the chosen appointment date and verbal time string into a strict ISO 8601 Timestamp format (YYYY-MM-DDTHH:MM:SS) based on the current context year. Never pass verbal descriptors like 'evening' or 'afternoon'." 
               },
               group_size: { type: "integer", description: "Total count of people included in this booking sequence. Defaults to 1." },
               special_requests: { type: "string", description: "Any special requests, notes for the team, or per-person structural details." },
+              action: {
+                type: "string",
+                description: "Must always be hardcoded/passed as 'book_appointment' so the backend router routes this to the database insertion path.",
+                enum: ["book_appointment"]
+              }
             },
-            required: ["customer_name", "customer_phone", "customer_address", "service_name", "slot_time"],
+            required: ["customer_name", "customer_phone", "customer_address", "service_name", "slot_time", "action"],
           },
         },
       },
