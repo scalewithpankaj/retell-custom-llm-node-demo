@@ -267,11 +267,11 @@ export class FunctionCallingLlmClient {
             properties: {
               preferred_date: {
                 type: "string",
-                description: "The date requested by the customer (e.g., YYYY-MM-DD, 'today', or 'tomorrow').",
+                description: "The date requested by the customer. CRITICAL: You MUST normalize this into a strict ISO 8601 string format (YYYY-MM-DD) or use explicitly either 'today' or 'tomorrow' only. Never pass phrases like 'day after tomorrow'.",
               },
               service_name: {
                 type: "string",
-                description: "The specific grooming service being requested.",
+                description: "The exact name of the grooming service requested. Must match official business service catalog items perfectly (e.g., 'Regular Haircut (Men)', 'Highlights', 'Men's Senior cut').",
               },
             },
             required: ["preferred_date", "service_name"],
@@ -289,8 +289,14 @@ export class FunctionCallingLlmClient {
               customer_name: { type: "string", description: "First and last name of the customer." },
               customer_phone: { type: "string", description: "Mobile number provided for SMS confirmation." },
               customer_address: { type: "string", description: "Full delivery address including unit numbers, city, and postal code." },
-              service_name: { type: "string", description: "The finalized service package or comma-separated list of group services." },
-              slot_time: { type: "string", description: "The chosen appointment date and verbal time string confirmed by the customer." },
+              service_name: { 
+                type: "string", 
+                description: "The exact official name of the service from the database (e.g., 'Regular Haircut (Men)', 'Highlights')." 
+              },
+              slot_time: { 
+                type: "string", 
+                description: "CRITICAL: Convert the chosen appointment date and verbal time string into a strict ISO 8601 Timestamp format (YYYY-MM-DD HH:MM:SS) based on the current context year. Never pass verbal descriptors like 'evening' or 'afternoon'." 
+              },
               group_size: { type: "integer", description: "Total count of people included in this booking sequence. Defaults to 1." },
               special_requests: { type: "string", description: "Any special requests, notes for the team, or per-person structural details." },
             },
