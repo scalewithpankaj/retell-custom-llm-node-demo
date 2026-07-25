@@ -268,66 +268,64 @@ export class FunctionCallingLlmClient {
         },
       },
       {
-        type: "function",
-        function: {
-          name: "check_availability",
-          description: "Retrieve all busy calendar slots within a broad date/time window to calculate and pitch free openings over the phone.",
-          parameters: {
-            type: "object",
-            properties: {
-              window_start: {
-                type: "string",
-                description: "CRITICAL: The ISO 8601 start timestamp of the general window requested (e.g., '2026-07-25T12:00:00'). If the user says 'tomorrow afternoon', infer 12:00:00. Year must match the current context year (2026).",
-              },
-              window_end: {
-                type: "string",
-                description: "CRITICAL: The ISO 8601 end timestamp of the general window requested (e.g., '2026-07-25T17:00:00'). If the user says 'tomorrow afternoon', infer 17:00:00 or the end of the business day.",
-              },
-              service_name: {
-                type: "string",
-                description: "The exact name of the grooming service requested. Must match official business service catalog items perfectly (e.g., 'Regular Haircut (Men)', 'Highlights', 'Men's Senior cut').",
-              },
-              action: {
-                type: "string",
-                description: "Must always be hardcoded/passed as 'check_availability' so the backend router knows where to send it.",
-                enum: ["check_availability"]
-              }
-            },
-            required: ["window_start", "window_end", "service_name", "action"],
+    type: "function",
+    function: {
+      name: "check_availability",
+      description: "Retrieve all busy calendar slots for a specific date to calculate and pitch free openings over the phone.",
+      parameters: {
+        type: "object",
+        properties: {
+          booking_date: {
+            type: "string",
+            description: "The date requested by the user in strict YYYY-MM-DD format (e.g., '2026-07-25'). Year must match current context year (2026).",
           },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "book_appointment",
-          description: "Finalize and book the appointment slot into the database after user details are verbally confirmed.",
-          parameters: {
-            type: "object",
-            properties: {
-              customer_name: { type: "string", description: "First and last name of the customer." },
-              customer_phone: { type: "string", description: "Mobile number provided for SMS confirmation." },
-              customer_address: { type: "string", description: "Full delivery address including unit numbers, city, and postal code." },
-              service_name: { 
-                type: "string", 
-                description: "The exact official name of the service from the database (e.g., 'Regular Haircut (Men)', 'Highlights')." 
-              },
-              slot_time: { 
-                type: "string", 
-                description: "CRITICAL: Convert the chosen appointment date and verbal time string into a strict ISO 8601 Timestamp format (YYYY-MM-DDTHH:MM:SS) based on the current context year. Never pass verbal descriptors like 'evening' or 'afternoon'." 
-              },
-              group_size: { type: "integer", description: "Total count of people included in this booking sequence. Defaults to 1." },
-              special_requests: { type: "string", description: "Any special requests, notes for the team, or per-person structural details." },
-              action: {
-                type: "string",
-                description: "Must always be hardcoded/passed as 'book_appointment' so the backend router routes this to the database insertion path.",
-                enum: ["book_appointment"]
-              }
-            },
-            required: ["customer_name", "customer_phone", "customer_address", "service_name", "slot_time", "action"],
+          service_name: {
+            type: "string",
+            description: "The exact name of the grooming service requested. Must match official business service catalog items perfectly (e.g., 'Regular Haircut (Men)').",
           },
+          action: {
+            type: "string",
+            description: "Must always be hardcoded/passed as 'check_availability'.",
+            enum: ["check_availability"]
+          }
         },
+        required: ["booking_date", "service_name", "action"],
       },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "book_appointment",
+      description: "Finalize and book the appointment slot into the database after user details are verbally confirmed.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_name: { type: "string", description: "First and last name of the customer." },
+          customer_phone: { type: "string", description: "Mobile number provided for SMS confirmation." },
+          customer_address: { type: "string", description: "Full delivery address including unit numbers and city." },
+          service_name: { 
+            type: "string", 
+            description: "The exact official name of the service from the database (e.g., 'Regular Haircut (Men)')." 
+          },
+          booking_date: { 
+            type: "string", 
+            description: "The finalized appointment date in strict YYYY-MM-DD format based on the current context year." 
+          },
+          booking_time: { 
+            type: "string", 
+            description: "The finalized appointment time in strict 24-hour HH:MM format (e.g., '09:40')." 
+          },
+          action: {
+            type: "string",
+            description: "Must always be hardcoded/passed as 'book_appointment'.",
+            enum: ["book_appointment"]
+          }
+        },
+        required: ["customer_name", "customer_phone", "customer_address", "service_name", "booking_date", "booking_time", "action"],
+      },
+    }
+  },
     ];
     return functions;
   }
