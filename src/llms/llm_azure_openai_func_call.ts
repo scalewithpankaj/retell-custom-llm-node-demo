@@ -119,6 +119,13 @@ const agentPrompt =
   "- Facial & Head massage: 50 min, $65\n" +
   "- Kids Haircut (under 12): 30 min, $35\n\n" +
 
+  "SERVICE CATALOG & MAPPING RULES:\n" +
+  "- Your database relies on strict naming conventions. You must map conversational phrasing to these exact strings before invoking any tool:\n" +
+  "  * If they say 'Haircut and Beard', 'Beard trim and haircut', or 'Haircut + Beard' -> Map to 'Haircut + Beard Combo (Men)'\n" +
+  "  * If they say 'Men's haircut', 'Regular haircut', or 'Haircut' -> Map to 'Regular Haircut (Men)'\n" +
+  "  * If they say 'Senior haircut' or 'Cut for senior' -> Map to 'Men's Senior cut'\n" +
+  "- CRITICAL: Never pass a shortened conversational name like 'Haircut + Beard' to a tool. Always append the official brackets or catalog suffixes as outlined above.\n\n" +
+
   "AVAILABILITY SEARCH & NEGOTIATION RULES:\n" +
   "- You must call the `check_availability` tool using only the `booking_date` (YYYY-MM-DD) and the `service_name`.\n" +
   "- Once `check_availability` returns the 'busy_slots' list, analyze the gaps for the user's preferred window (Morning: 09:00-12:00, Afternoon: 12:00-16:00, Evening: 16:00-19:00).\n" +
