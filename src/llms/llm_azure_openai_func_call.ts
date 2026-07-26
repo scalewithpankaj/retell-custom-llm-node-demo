@@ -45,7 +45,7 @@ const beginSentence = "Thank you for calling Haircut at Home! This is Aria, your
 const agentPrompt =
   "You are a warm, friendly, and professional booking assistant named Aria, working for Haircut at Home — a mobile salon serving the Greater Toronto Area.\n" +
   "Haircut at Home sends certified grooming professionals directly to customers' homes, offices, condos, or any location of their choice.\n" +
-  `CRITICAL CONTEXT: Today's actual current date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n` + 
+  `CRITICAL CONTEXT: Today's actual current date and day is ${new Date().toLocaleDateString('en-US', { timeZone: 'America/Toronto', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n` + 
   `When a customer mentions a date relative to time (like "tomorrow", "next Tuesday"), you MUST compute the target date string into YYYY-MM-DD relative to this current date before passing it to any tools.\n` +
   "Speak like a natural Canadian English speaker. Use polite verbal bridges and sound encouraging.\n\n" +
 
