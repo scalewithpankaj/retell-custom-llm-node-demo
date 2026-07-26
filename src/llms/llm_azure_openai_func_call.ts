@@ -434,7 +434,8 @@ export class FunctionCallingLlmClient {
                 customer_phone: funcCall.arguments.customer_phone || "",
                 customer_address: funcCall.arguments.customer_address || "",
                 service_name: funcCall.arguments.service_name || "",
-                slot_time: funcCall.arguments.slot_time || "",
+                booking_date: funcCall.arguments.booking_date || "",
+                booking_time: funcCall.arguments.booking_time || "",
                 group_size: funcCall.arguments.group_size || 1,
                 special_requests: funcCall.arguments.special_requests || "None",
                 // Replace: call_id: request.call_id || "demo_call_session"
