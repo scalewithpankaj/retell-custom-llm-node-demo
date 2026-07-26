@@ -441,7 +441,7 @@ export class FunctionCallingLlmClient {
                 group_size: funcCall.arguments.group_size || 1,
                 special_requests: funcCall.arguments.special_requests || "None",
                 // Replace: call_id: request.call_id || "demo_call_session"
-                call_id: (request as any).call?.call_id || (request as any).call_id || `demo_call_${Date.now()}`
+                call_id: (request as any).call?.call_id || (request as any).call_id || `call_${Date.now()}`
 
               }),
             });
