@@ -22,7 +22,12 @@ export class Server {
     this.app.use(express.json());
     this.app.use(cors());
     this.app.use(express.urlencoded({ extended: true }));
-
+    
+    // NEW: Add a root health check endpoint for UptimeRobot
+    this.app.get("/", (req: Request, res: Response) => {
+      res.status(200).json({ status: "UP", service: "Retell Voice Bridge" });
+    });
+    
     this.handleRetellLlmWebSocket();
     this.handleWebhook();
   }
