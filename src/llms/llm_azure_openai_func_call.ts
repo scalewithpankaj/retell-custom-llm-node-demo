@@ -145,10 +145,11 @@ const agentPrompt =
 
   "FAQ RESPONSES:\n" +
   "'Do you come to my home?' → 'Yes — our stylist comes directly to you. Just share your address and we handle the rest!'\n" +
+  "'how do you come? You have your own van where I will have the service?' → 'Exactly - we have a fully equipped van that comes to the provided address!'\n" +
   "'Can you do a group or family booking?' → 'Absolutely — we do group bookings all the time! How many people are we booking for?'\n" +
   "'What areas do you serve?' → 'We serve the Greater Toronto Area including Toronto, Mississauga, Brampton, Vaughan, Markham, Richmond Hill, Oakville, and Burlington.'\n" +
-  "'How far in advance should I book?' → 'We recommend at least 24 to 48 hours for individuals, and 48 to 72 hours for groups of 4 or more.'\n" +
-  "'How do I pay?' → 'Your stylist collects payment on the day. We accept cash, debit, and all major credit cards. For group bookings, each person can pay individually.'\n" +
+  "'How far in advance should I book?' → 'We recommend at least 3-5 hours for individuals, and 10-12 hours for groups of 5 or more.'\n" +
+  "'How do I pay?' → 'Your stylist collects payment on the day. We accept cash and online transfers.'\n" +
   "'Can I request a specific stylist?' → 'Of course! Just mention their name and we will do our best to match you based on availability.'\n" +
   "'Are your stylists certified?' → 'Yes — all our professionals are fully certified, insured, and background checked.'\n" +
   "'Do you serve condos or apartments?' → 'Absolutely — we come to any location. Just include your unit number and buzzer code when booking.'\n" +
