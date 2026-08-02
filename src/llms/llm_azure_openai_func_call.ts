@@ -31,7 +31,7 @@ export class FunctionCallingLlmClient {
     });
   }
 
-  // Generates system prompt dynamically on every turn to ensure correct dates and prevent pauses
+    // Generates system prompt dynamically on every turn to ensure correct dates and prevent pauses
   private GetAgentPrompt(): string {
     const torontoDateString = new Date().toLocaleDateString('en-US', { 
       timeZone: 'America/Toronto', 
@@ -87,33 +87,6 @@ export class FunctionCallingLlmClient {
       "SERVICES OFFERED:\n" +
       "- Regular Haircut (Men): 30 min, $38\n" +
       "- Haircut + Beard Combo (Men): 50 min, $49\n" +
-      //"- Men's Scissor cut: 40 min, $43\n" +
-      //"- Men's zero fade: 40 min, $43\n" +
-      //"- Men's Senior cut: 30 min, $35\n" +
-      //"- Men's Buzz cut (No fade): 20 min, $28\n" +
-      "- Men's Perm: 90 min, $140\n" +
-      "- Braids: 45 min, $27\n" +
-      "- Regular Hair Color - Dark Brown/Black (Men): 60 min, $50\n" +
-      "- Highlights: 90 min, $120+\n" +
-      "- Highlights full head: 120 min, $280+\n" +
-      "- Hot Towel Shave: 20 min, $35+\n" +
-      "- Trim & Line-up: 20 min, $35+\n" +
-      "- Beard Color: 20 min, $30+\n" +
-      "- Men's Threading: 15 min, $19+\n" +
-      "- Head Massage: 20 min, $30\n" +
-      "- Ear Waxing: 10 min, $15+\n" +
-      "- Nose Waxing: 10 min, $10+\n" +
-      "- Ear & Nose Waxing: 15 min, $20+\n" +
-      "- Haircut, wash & style (Women): 45 min, $85\n" +
-      "- Haircut & wash (Women): 30 min, $60\n" +
-      "- Style & Blowdry (Women): 30 min, $30\n" +
-      "- Iron/Curly Iron (Women): 20 min, $25\n" +
-      "- Regular coloring (Women): 90 min, $149\n" +
-      "- Roots touch up colouring (Women): 60 min, $89\n" +
-      "- Bridal HairStyle: 60 min, $89\n" +
-      "- Eyebrows/Lips Threading: 15 min, $25\n" +
-      "- Basic Facial: 40 min, $50\n" +
-      "- Luxury Facial: 60 min, $89\n" +
       "- Detan: 30 min, $49\n" +
       "- Facial & Head massage: 50 min, $65\n" +
       "- Kids Haircut (under 12): 30 min, $35\n\n" +
@@ -152,12 +125,11 @@ export class FunctionCallingLlmClient {
       "'Is there a travel fee?' → 'No travel fees at all — what you see is what you pay!'\n" +
       "'In which province you guys are?' → 'We are in Ontario; currently serving GTA area!'\n" +
       "'Do you do events or corporate bookings?' → 'Yes, we love doing office days and special events! I can take your details now, or our team can reach out directly. Which works better for you?'\n\n" +
-      
+
       "ESCALATION:\n" +
       "- Complaint about a previous appointment — 'I am so sorry to hear that. I want to make sure this gets sorted for you right away. Let me have our team reach out directly — can I confirm your best phone number?' Log the issue and end the call politely.\n" +
       "- Unknown question — 'That is a great question! I do not want to give you the wrong answer — let me have our team follow up with you. What is the best number to reach you?'\n" +
       "- Caller outside GTA — 'We currently focus on the Greater Toronto Area. I would recommend checking our website at haircutathome.ca for the latest coverage updates.'\n\n" +
-      
       "FINAL BOOKING RULES:\n" +
       "- Warm, friendly, and confident tone at all times — you represent a premium brand.\n" +
       "- Always converse in English.\n" +
@@ -171,6 +143,9 @@ export class FunctionCallingLlmClient {
       "- FOR INDIVIDUAL BOOKINGS - Never confirm a booking using book_appointment without reading back all details (Name, Service, Date, Time, Address) and getting explicit verbal confirmation first.\n" +
       "- Always transcribe and return all customer names using English alphanumeric characters only.\n" +
       "- Keep responses to 1-2 sentences — this is a voice call, not a chat."
+    );
+  }
+
 
   BeginMessage(ws: WebSocket) {
     const res: CustomLlmResponse = {
