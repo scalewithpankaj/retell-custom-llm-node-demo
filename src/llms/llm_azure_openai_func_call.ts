@@ -353,7 +353,7 @@ export class FunctionCallingLlmClient {
 
         console.log(`Executing tool: ${funcCall.funcName}`, funcCall.arguments);
         let toolResultText = "";
-        const n8nWebhookUrl = "https://pickd.ca";
+        const n8nWebhookUrl = "https://api.pickd.ca/webhook/haircutathome-booking";
 
         if (funcCall.funcName === "check_availability") {
           try {
