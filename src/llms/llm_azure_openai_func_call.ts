@@ -105,7 +105,7 @@ export class FunctionCallingLlmClient {
       "- Highlights: 90 min, $120+\n" +
       "- Highlights full head: 120 min, $280+\n" +
       "- Hot Towel Shave: 20 min, $35+\n" +
-      "- Trim & Line-up: 20 min, $35+\n" +
+      "- Beard Trim & Line-up: 20 min, $35+\n" +
       "- Beard Color: 20 min, $30+\n" +
       "- Men's Threading: 15 min, $19+\n" +
       "- Head Massage: 20 min, $30\n" +
