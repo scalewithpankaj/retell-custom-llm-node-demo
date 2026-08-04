@@ -42,7 +42,7 @@ export class FunctionCallingLlmClient {
     });
 
     // FIX: Inject the current Time in 12-hour or 24-hour format
-    const torontoTimeString = now.toLocaleTimeString('en-US', {
+    const torontoTimeString = new Date().toLocaleTimeString('en-US', {
       timeZone: 'America/Toronto',
       hour: '2-digit',
       minute: '2-digit',
